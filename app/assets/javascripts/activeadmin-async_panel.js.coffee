@@ -17,35 +17,40 @@
 #   end
 
 $(document).on "page:load turbolinks:load turbo:load", ->
-  $('.async-panel').each (index, item) ->
-    item = $(item)
-    requiresClick = !!item.data('clickable')
-    worker = ->
-      item.addClass('processing')
-      $('h3', item).hide().show(0)
+  $(window).scroll ->
+    $('.async-panel:not([data-loaded]):in-viewport').each (index, item) ->
+      $(item).attr('data-loaded', '0');
 
-      $.ajax
-        url: item.data('url')
-        success: (data) ->
-          $('.panel_contents', item).html(data)
-        error: (data, status, error) ->
-          $('.panel_contents', item).html(error)
-        complete: ->
-          item.removeClass('processing')
+    $('.async-panel[data-loaded=0]:in-viewport').each (index, item) ->
+      item = $(item)
+      requiresClick = !!item.data('clickable')
+      worker = ->
+        item.addClass('processing')
+        item.attr('data-loaded', '1');
+        $('h3', item).hide().show(0)
 
-          # Schedule the next request when the current one's completed
-          period = item.data('period')
-          if period
-            setTimeout worker, period * 1000
+        $.ajax
+          url: item.data('url')
+          success: (data) ->
+            $('.panel_contents', item).html(data)
+          error: (data, status, error) ->
+            $('.panel_contents', item).html(error)
+          complete: ->
+            item.removeClass('processing')
 
-    registerHandler = ->
-      item.addClass('clickable')
-      $('h3', item).on 'click', ->
-        $('h3', item).off('click')
-        item.removeClass('clickable')
+            # Schedule the next request when the current one's completed
+            period = item.data('period')
+            if period
+              setTimeout worker, period * 1000
+
+      registerHandler = ->
+        item.addClass('clickable')
+        $('h3', item).on 'click', ->
+          $('h3', item).off('click')
+          item.removeClass('clickable')
+          worker()
+
+      if requiresClick
+        registerHandler()
+      else
         worker()
-
-    if requiresClick
-      registerHandler()
-    else
-      worker()
