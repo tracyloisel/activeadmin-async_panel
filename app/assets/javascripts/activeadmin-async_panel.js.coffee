@@ -28,6 +28,11 @@ loadVisibleData = ->
   $('.async-panel[data-loaded=0]:in-viewport').each (index, item) ->
     item = $(item)
     requiresClick = !!item.data('clickable')
+    if ($('.panel_contents', item).length > 0)
+      data_target = $('.panel_contents', item)
+    else
+      data_target = item
+
     worker = ->
       item.addClass('processing')
       item.attr('data-loaded', '1');
@@ -36,9 +41,9 @@ loadVisibleData = ->
       $.ajax
         url: item.data('url')
         success: (data) ->
-          $('.panel_contents', item).html(data)
+          $(data_target).html(data)
         error: (data, status, error) ->
-          $('.panel_contents', item).html(error)
+          $(data_target).html(error)
         complete: ->
           item.removeClass('processing')
 
